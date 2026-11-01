@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apexfy</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Apexfy">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="description" content="Apexfy is a free focus app: Pomodoro timer, single-task focus view, ambient sounds, an AI productivity coach and silent co-working rooms.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Apexfy"><meta property="og:title" content="Apexfy: deep focus with a community"><meta property="og:description" content="Free focus timer, soundscapes, AI coach and silent co-working rooms.">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Apexfy","applicationCategory":"ProductivityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--card:#0F172A;--c2:#18223a;--tx:#EEF3FA;--mu:#8795AC;--cy:#00F0FF;--pu:#A855F7;--gr:#10B981;--rd:#EF4444;--ln:#1c2740;--on:#001417;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+:root[data-theme="light"]{--bg:#F4F7FB;--card:#fff;--c2:#E7EDF6;--tx:#0B1220;--mu:#5A6a82;--cy:#0891B2;--pu:#7C3AED;--ln:#d6dfec;--on:#fff;color-scheme:light}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#F4F7FB;--card:#fff;--c2:#E7EDF6;--tx:#0B1220;--mu:#5A6a82;--cy:#0891B2;--pu:#7C3AED;--ln:#d6dfec;--on:#fff;color-scheme:light}}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font:500 15px/1.45 "DM Sans",system-ui,sans-serif;display:flex;justify-content:center}
+h1,h2,.d{font-family:Sora,"DM Sans",system-ui,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+#app{width:100%;max-width:480px;height:100%;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+.brand{display:flex;align-items:center;gap:8px;font:800 20px Sora,sans-serif;letter-spacing:-.03em}
+.brand svg{filter:drop-shadow(0 0 8px var(--cy))}
+.ib{width:42px;height:42px;display:grid;place-items:center;border-radius:14px}
+.ib:active{background:var(--card)}
+main{flex:1;overflow-y:auto;padding:0 16px 110px;scrollbar-width:none}
+main::-webkit-scrollbar{display:none}
+.pill{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:grid;grid-template-columns:repeat(3,1fr);background:var(--card);border:1px solid var(--ln);border-radius:26px;padding:6px;transition:.3s}
+.pill button{padding:10px 4px;border-radius:20px;color:var(--mu);font:600 12px Sora,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px}
+.pill button.on{background:var(--cy);color:var(--on)}
+.cd{background:var(--card);border-radius:22px;padding:16px;margin-top:12px}
+h2{font-size:13px;font-weight:600;color:var(--mu);margin-bottom:10px}
+.mu{color:var(--mu);font-size:13px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cta{background:var(--cy);color:var(--on);font:800 16px Sora,sans-serif;border-radius:18px;padding:16px 30px}
+.cta:active{transform:scale(.97)}.cta[disabled]{opacity:.5}
+.gh{background:var(--c2);border-radius:16px;padding:13px 20px;font-weight:700}
+.chip{padding:7px 13px;border-radius:99px;background:var(--c2);color:var(--mu);font-size:13px;font-weight:700}
+.chip.on{background:color-mix(in srgb,var(--cy) 18%,transparent);color:var(--cy)}
+input,textarea{width:100%;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-top:8px}
+.bar{height:8px;border-radius:9px;background:var(--c2);overflow:hidden}.bar i{display:block;height:100%;border-radius:9px;background:var(--cy);transition:width .4s}
+.big{font:800 40px/1 Sora,sans-serif;letter-spacing:-.04em}
+/* timer */
+.stage{text-align:center;padding:10px 0}
+.clock{position:relative;width:270px;height:270px;margin:12px auto}
+.clock svg{width:100%;height:100%;transform:rotate(-90deg)}
+.clock .t{position:absolute;inset:0;display:grid;place-content:center}
+.clock b{font:800 58px Sora,sans-serif;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.glow{animation:pulse 2.8s ease-in-out infinite}@keyframes pulse{0%,100%{filter:drop-shadow(0 0 3px var(--k))}50%{filter:drop-shadow(0 0 18px var(--k))}}
+.focus .top,.focus .pill,.focus .hide{opacity:0;pointer-events:none;position:absolute;visibility:hidden}
+.focus main{display:flex;flex-direction:column;justify-content:center;padding-bottom:20px}
+.tk{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--ln)}
+.tk:last-child{border:0}.tk .nm{flex:1;text-align:left}
+.ck{width:24px;height:24px;border-radius:8px;border:2px solid var(--mu);flex:none;display:grid;place-items:center}
+.ck.d{background:var(--gr);border-color:var(--gr);color:#001}
+.tk.cur .nm{color:var(--cy);font-weight:700}
+.tog{width:48px;height:28px;border-radius:99px;background:var(--c2);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--mu);transition:.2s}
+.tog.on{background:var(--rd)}.tog.on::after{left:23px;background:#fff}.tog.cy.on{background:var(--cy)}
+.snd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.snd button{background:var(--c2);border-radius:14px;padding:12px 2px;font-size:12px;font-weight:700;color:var(--mu)}
+.snd button.on{background:color-mix(in srgb,var(--pu) 24%,transparent);color:var(--pu)}
+.ch{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;width:100%;text-align:left}.ch:hover,.ch:active{background:var(--c2)}
+.cat{font:700 12px Sora,sans-serif;color:var(--mu);padding:14px 12px 4px}
+.live{font-size:12px;color:var(--pu);font-weight:700}
+.av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cy),var(--pu));color:#000;font:800 12px Sora,sans-serif;display:grid;place-items:center;flex:none}
+.msg{display:flex;gap:10px;margin:14px 0}.msg p{white-space:pre-wrap;overflow-wrap:anywhere}
+pre{background:#05080f;color:#c8d6ee;border:1px solid var(--ln);border-radius:12px;padding:12px;font:12px/1.5 ui-monospace,Menlo,monospace;overflow-x:auto;margin-top:6px}
+.cmp{display:flex;gap:8px;align-items:flex-end}.cmp textarea{margin:0;resize:none;height:48px}
+.seats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.seat{font-size:12px;color:var(--mu)}.seat .av{width:52px;height:52px;margin:0 auto 6px;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--k)}
+.rk{flex:1;text-align:center;border-radius:14px;padding:10px 2px;background:var(--c2);font-size:12px;color:var(--mu);font-weight:700}.rk.on{background:color-mix(in srgb,var(--pu) 22%,transparent);color:var(--pu)}
+.st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-top:14px}.st b{display:block;font:800 22px Sora,sans-serif}
+.auth{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px}
+.auth .err{color:var(--rd);font-size:13px;min-height:20px;margin-top:8px}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.25s;z-index:5}.scrim.on{opacity:1;pointer-events:auto}
+.dr{position:absolute;top:0;bottom:0;left:0;width:82%;background:var(--card);z-index:6;transform:translateX(-103%);transition:transform .28s;padding:calc(env(safe-area-inset-top,0px) + 20px) 18px;overflow-y:auto}.dr.on{transform:none}
+.dr .row{padding:14px 0;border-bottom:1px solid var(--ln)}
+.sb{position:absolute;inset:0 0 auto;z-index:7;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 14px;display:none;max-height:100%;overflow-y:auto}.sb.on{display:block}
+.toast{position:absolute;left:50%;top:70px;transform:translate(-50%,-12px);background:var(--c2);padding:10px 16px;border-radius:99px;font-size:13px;font-weight:700;opacity:0;transition:.25s;z-index:9;pointer-events:none;max-width:90%}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.bad{background:var(--rd);color:#fff}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><div id="view" style="display:contents"><div style="padding:28px"><h1 style="font-size:28px">Apexfy</h1><p>Free focus app with a Pomodoro timer, single-task focus view, ambient soundscapes, an AI productivity coach and silent co-working rooms.</p></div></div>
+<div class="scrim" id="scrim"></div><aside class="dr" id="dr"></aside>
+<div class="sb" id="sb"><div class="row"><input id="q" placeholder="Search rooms, tasks, posts" aria-label="Search" style="margin:0"><button class="gh" id="sx">Close</button></div><div id="sr" style="margin-top:10px"></div></div>
+<div class="toast" id="toast"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MEM={};
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?(k in MEM?MEM[k]:d):JSON.parse(v)}catch(e){return k in MEM?MEM[k]:d}},set(k,v){MEM[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const buzz=n=>{try{S.haptic&&navigator.vibrate&&navigator.vibrate(n||12)}catch(e){}};
+let th;const say=(m,bad)=>{const t=$('#toast');t.textContent=m;t.className='toast on'+(bad?' bad':'');clearTimeout(th);th=setTimeout(()=>t.classList.remove('on'),2200)};
+const fmt=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return(h?h+':':'')+String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const ini=n=>(n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const RANKS=[['Spark',0],['Flow',500],['Apex I',1500],['Apex II',4000],['Apex III',8000]];
+const PERK={'Spark':'Public rooms','Flow':'Custom status','Apex I':'Private rooms','Apex II':'Host rooms','Apex III':'Priority access'};
+const S={email:null,user:null,D:null,tab:'flow',room:null,mode:'pomo',run:false,brk:false,len:25,end:0,start:0,up:0,dist:0,theme:ls.get('apx_theme','dark'),haptic:true,snd:null,msgs:ls.get('apx_msgs',{}),peers:[],roomApi:null,sample:null,ai:'',aiBusy:false};
+document.documentElement.dataset.theme=S.theme;
+const day=t=>new Date(t).toDateString();
+const MARK='<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M2 21L13 3l11 18h-6.5L13 12.5 8.5 21z" fill="var(--cy)"/></svg>';
+
+/* ---------- auth (email + password, stored on this device) ---------- */
+async function hash(p,salt){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function signUp(name,email,pw){
+  const U=ls.get('apx_users',{});if(U[email])throw'This email already has an account. Sign in instead.';
+  const salt=crypto.getRandomValues(new Uint32Array(2)).join('');U[email]={salt,h:await hash(pw,salt)};ls.set('apx_users',U);
+  ls.set('apx_d_'+email,{name,age:'',loc:'',skills:['App development','UI/UX design'],tasks:[],sessions:[],posts:[],cur:null});login(email)}
+async function signIn(email,pw){const u=ls.get('apx_users',{})[email];if(!u||await hash(pw,u.salt)!==u.h)throw'Email or password is incorrect.';login(email)}
+function login(email){S.email=email;S.D=ls.get('apx_d_'+email);ls.set('apx_session',email);S.tab='flow';S.room=null;joinRoom();render()}
+function logout(){stopSound();clearInterval(tk);S.run=false;S.email=null;S.D=null;ls.set('apx_session',null);dr(false);render()}
+const save=()=>ls.set('apx_d_'+S.email,S.D);
+
+/* ---------- stats ---------- */
+const xp=()=>S.D.sessions.reduce((a,s)=>a+Math.max(0,s.min*5-s.dist*10),0);
+const hrs=()=>S.D.sessions.reduce((a,s)=>a+s.min,0)/60;
+const rank=()=>{const x=xp();let i=0;RANKS.forEach((r,k)=>{if(x>=r[1])i=k});return i};
+const streak=()=>{const d=new Set(S.D.sessions.map(s=>day(s.t)));let n=0,t=Date.now();if(!d.has(day(t)))t-=864e5;while(d.has(day(t))){n++;t-=864e5}return n};
+function score(){const td=S.D.sessions.filter(s=>day(s.t)===day(Date.now()));if(!td.length)return null;const m=td.reduce((a,s)=>a+s.min,0),ds=td.reduce((a,s)=>a+s.dist,0);return Math.max(0,Math.min(100,Math.round(100*Math.min(1,m/120)-ds*8)))}
+function peak(){const h={};S.D.sessions.forEach(s=>{const k=new Date(s.t).getHours();h[k]=(h[k]||0)+s.min});const e=Object.entries(h).sort((a,b)=>b[1]-a[1])[0];return e?+e[0]:null}
+function tip(){const sc=score(),p=peak(),ds=S.D.sessions.slice(-5).reduce((a,s)=>a+s.dist,0);
+  if(!S.D.sessions.length)return'Finish your first session and I will start tracking your peak hours and distractions.';
+  return(p!=null?`Your peak focus hour is ${p}:00. Put your hardest task there. `:'')+(ds>2?`You left the app ${ds} times in your last 5 sessions. Try Strict Mode and silence notifications.`:'Distractions are low lately. Try a longer block of 50 minutes.')}
+
+/* ---------- timer (timestamp based, so it stays accurate in background) ---------- */
+let tk=null;
+const left=()=>Math.max(0,Math.round((S.end-Date.now())/1000));
+function start(){S.run=true;S.dist=0;S.start=Date.now();if(S.mode==='pomo')S.end=Date.now()+(S.brk?5:S.len)*60000;buzz(30);tk=setInterval(tick,500);render()}
+function tick(){if(S.mode==='pomo'&&left()<=0)return done(true);paint()}
+function paint(){const t=$('#tt');if(!t)return;const sec=S.mode==='pomo'?left():Math.round((Date.now()-S.start)/1000);t.textContent=fmt(sec);const tot=S.brk?300:S.len*60;const p=S.mode==='pomo'?1-sec/tot:(sec%3600)/3600;$('#arc').setAttribute('stroke-dashoffset',(691*(1-p)).toFixed(1))}
+function done(full){clearInterval(tk);const el=(Date.now()-S.start)/60000;const min=full?(S.brk?0:S.len):Math.floor(el);S.run=false;
+  if(!S.brk&&min>=1){const g=Math.max(0,min*5-S.dist*10);S.D.sessions.push({t:Date.now(),min,dist:S.dist,task:cur()?.t||'Open focus',mode:S.mode});save();
+    say(`+${g} XP · ${min} min logged`+(S.dist?` · ${S.dist} distraction penalty`:''));buzz([40,60,40])}
+  else if(!S.brk)say('Session too short to log');
+  if(S.mode==='pomo'&&full)S.brk=!S.brk;else S.brk=false;render()}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.run&&!S.brk&&S.strict!==false){S.dist++;S.hid=1}else if(!document.hidden&&S.hid){S.hid=0;say('Distraction logged. Strict Mode penalty applied.',1);buzz([60,40,60])}});
+S.strict=ls.get('apx_strict',true);
+const cur=()=>S.D.tasks.find(t=>t.id===S.D.cur&&!t.done);
+
+/* ---------- sound (Web Audio, generated on device) ---------- */
+let AC,nodes=[];
+function noiseSrc(){const b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){const w=Math.random()*2-1;d[i]=S._br?(l=(l+.02*w)/1.02)*3.5:w}const s=AC.createBufferSource();s.buffer=b;s.loop=true;s.start();return s}
+function stopSound(){nodes.forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});nodes=[];S.snd=null}
+function playSound(k){stopSound();AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const g=AC.createGain();g.gain.value=.35;g.connect(AC.destination);nodes.push(g);
+  if(k==='White noise'){const n=noiseSrc();n.connect(g);nodes.push(n)}
+  else if(k==='Rain'){const n=noiseSrc(),f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=900;const l=AC.createBiquadFilter();l.type='lowpass';l.frequency.value=7000;n.connect(f);f.connect(l);l.connect(g);nodes.push(n)}
+  else{const hz=k==='Alpha'?10:20;[[200,-1],[200+hz,1]].forEach(([f,p])=>{const o=AC.createOscillator();o.frequency.value=f;const pn=AC.createStereoPanner();pn.pan.value=p;const og=AC.createGain();og.gain.value=.5;o.connect(pn);pn.connect(og);og.connect(g);o.start();nodes.push(o)})}
+  S.snd=k}
+
+/* ---------- community (live via room capability; falls back to this device) ---------- */
+const CH=[['Work',['general-work','standups']],['Coding',['code-help','pair-session']],['Design',['ui-critique','design-voice']],['Study',['exam-prep','Silent focus']]];
+async function joinRoom(){if(S.roomApi!==null&&S.roomApi!==undefined)return;try{const r=await claude.use('room');S.roomApi=r||false;if(!r)return;r.on('chat',m=>{if(m.isMe)return;add(m.data,false)});r.onPeers(c=>{S.peers=c.peers.filter(p=>p.presence&&p.presence.name);if(S.email&&S.tab==='comm')render()});pres()}catch(e){S.roomApi=false}try{S.sample=await claude.use('sample')}catch(e){}}
+function pres(){if(S.roomApi&&S.email)S.roomApi.presence({name:S.D.name,status:S.run?(S.brk?'On a break':`In a ${S.mode==='pomo'?S.len+'m':'stopwatch'} Flow Session`):(S.room?.n?'In '+S.room.n:'Idle')}).catch(()=>{})}
+function add(m,mine){const k=m.ch;(S.msgs[k]=S.msgs[k]||[]).push(m);S.msgs[k]=S.msgs[k].slice(-60);ls.set('apx_msgs',S.msgs);if(S.room&&S.room.n===k)render(true)}
+function sendMsg(){const i=$('#mi');const v=i.value.trim();if(!v)return;const m={ch:S.room.n,by:S.D.name,txt:v,t:Date.now()};add(m,true);i.value='';buzz(8);if(S.roomApi)S.roomApi.emit('chat',m).catch(()=>{});setTimeout(()=>{const l=$('#main');l.scrollTop=1e6},30)}
+const body=t=>{const p=t.split('```');return p.map((x,i)=>i%2?`<pre>${esc(x.replace(/^\w*\n/,''))}</pre>`:`<p>${esc(x)}</p>`).join('')};
+
+/* ---------- views ---------- */
+function flow(){const c=S.brk?'var(--pu)':'var(--cy)',sc=score(),t=cur();
+  const open=S.D.tasks.filter(x=>!x.done);
+  return `<div class="stage"><div class="mu">${S.brk?'Break time':'Now focusing on'}</div>
+  <h1 class="d" style="font-size:22px;margin-top:2px">${S.brk?'Rest your eyes':esc(t?t.t:'Open focus, no task selected')}</h1>
+  <div class="clock ${S.run?'glow':''}" style="--k:${c}"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="var(--card)" stroke-width="10"/><circle id="arc" cx="125" cy="125" r="110" fill="none" stroke="${c}" stroke-width="10" stroke-linecap="round" stroke-dasharray="691" stroke-dashoffset="691"/></svg>
+  <div class="t"><b id="tt">${S.mode==='pomo'?fmt((S.brk?5:S.len)*60):'00:00'}</b><span class="mu">${S.mode==='pomo'?(S.brk?'5 min break':S.len+' min Pomodoro'):'Stopwatch'}</span></div></div>
+  <div style="display:flex;gap:10px;justify-content:center">${S.run?`<button class="gh" id="stop">${S.mode==='sw'||S.brk?'Finish':'End early'}</button>`:`<button class="cta" id="go">${S.brk?'Start break':'Start focus'}</button>`}</div>
+  ${S.run&&S.strict?`<p class="mu" style="margin-top:14px;color:var(--rd)">Strict Mode on · leaving this app costs XP</p>`:''}</div>
+  <div class="hide">
+  ${S.run?'':`<div class="row" style="justify-content:center;gap:8px"><button class="chip ${S.mode==='pomo'&&S.len===25?'on':''}" data-m="pomo" data-l="25">25m</button><button class="chip ${S.mode==='pomo'&&S.len===50?'on':''}" data-m="pomo" data-l="50">50m</button><button class="chip ${S.mode==='sw'?'on':''}" data-m="sw">Stopwatch</button></div>`}
+  <div class="cd"><h2>Tasks</h2><div style="display:flex;gap:8px"><input id="ti" placeholder="Add a task" aria-label="New task" style="margin:0"><button class="gh" id="ta">Add</button></div>
+  <div style="margin-top:6px">${S.D.tasks.length?S.D.tasks.map(x=>`<div class="tk ${x.id===S.D.cur&&!x.done?'cur':''}"><button class="ck ${x.done?'d':''}" data-done="${x.id}" aria-label="Complete">${x.done?'✓':''}</button><button class="nm" data-cur="${x.id}" style="${x.done?'text-decoration:line-through;color:var(--mu)':''}">${esc(x.t)}</button><button class="mu" data-del="${x.id}" aria-label="Delete">✕</button></div>`).join(''):'<p class="mu" style="padding:10px 0">No tasks yet. Add one, tap it to make it your focus.</p>'}</div></div>
+  <div class="cd"><div class="row"><div><b>Strict Mode</b><div class="mu">Penalizes leaving the app mid-session</div></div><button class="tog ${S.strict?'on':''}" id="strict" aria-label="Strict Mode"></button></div></div>
+  <div class="cd"><h2>AI coach</h2><div class="row" style="align-items:flex-end"><div><div class="big" style="color:var(--cy)">${sc==null?'—':sc}</div><div class="mu">Deep Work Score today</div></div><div class="mu" style="text-align:right">${Math.round(S.D.sessions.filter(s=>day(s.t)===day(Date.now())).reduce((a,s)=>a+s.min,0))} / 120 min goal</div></div>
+  <div class="bar" style="margin:12px 0"><i style="width:${sc||0}%"></i></div><p>${esc(S.ai||tip())}</p>
+  ${S.sample?`<button class="gh" id="ask" style="margin-top:12px" ${S.aiBusy?'disabled':''}>${S.aiBusy?'Thinking…':'Get personal feedback'}</button>`:''}</div>
+  <div class="cd"><h2>Soundscapes</h2><div class="snd">${['White noise','Rain','Alpha','Beta'].map(n=>`<button class="${S.snd===n?'on':''}" data-s="${n}">${n}</button>`).join('')}</div><p class="mu" style="margin-top:10px">${S.snd?'Playing '+S.snd.toLowerCase()+'. Tap again to stop.':'Alpha and Beta are binaural: use headphones.'}</p></div></div>`}
+
+function comm(){
+  if(S.room&&S.room.silent)return silent();if(S.room)return chat();
+  const live=S.peers.slice(0,8);
+  return `<div class="cd" style="padding:8px">${CH.map(([c,l])=>`<div class="cat">${c}</div>`+l.map(n=>`<button class="ch" data-r="${n}"><span style="width:20px;color:var(--mu)">${n==='Silent focus'?'◔':'#'}</span><span style="flex:1">${n}</span><span class="live">${n==='Silent focus'?'Synced timer':''}</span></button>`).join('')).join('')}</div>
+  <div class="cd"><h2>Live now</h2>${live.length?live.map(p=>`<div class="row" style="padding:7px 0"><span class="row" style="justify-content:flex-start"><span class="av">${esc(ini(p.presence.name))}</span><b>${esc(p.isMe?p.presence.name+' (you)':p.presence.name)}</b></span><span class="mu" style="text-align:right">${esc(p.presence.status||'')}</span></div>`).join(''):`<div class="row" style="padding:7px 0"><span class="row" style="justify-content:flex-start"><span class="av">${esc(ini(S.D.name))}</span><b>${esc(S.D.name)} (you)</b></span><span class="mu">${S.run?'In a Flow Session':'Idle'}</span></div><p class="mu">${S.roomApi===false?'Live presence is unavailable here. Messages stay on this device.':'Others who open Apexfy will show up here.'}</p>`}</div>`}
+function chat(){const m=S.msgs[S.room.n]||[];
+  return `<div class="row" style="margin-top:4px"><button class="gh" id="back" style="padding:10px 16px">Back</button><b class="d"># ${esc(S.room.n)}</b><span class="mu">${S.peers.length||1} online</span></div>
+  <div class="cd">${m.length?m.map(x=>`<div class="msg"><span class="av">${esc(ini(x.by))}</span><div style="min-width:0"><b>${esc(x.by)}</b> <span class="mu">${new Date(x.t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>${body(x.txt)}</div></div>`).join(''):'<p class="mu">No messages yet. Start with a question or share a snippet inside triple backticks.</p>'}</div>
+  <div class="cmp" style="margin-top:10px"><textarea id="mi" placeholder="Message #${esc(S.room.n)}" aria-label="Message"></textarea><button class="cta" id="snd" style="padding:14px 18px">Send</button></div>`}
+const BLOCK=3000;
+function silent(){const l=BLOCK-(Date.now()/1000%BLOCK);const ps=S.peers.length?S.peers:[{presence:{name:S.D.name},isMe:1}];
+  return `<div class="row" style="margin-top:4px"><button class="gh" id="back" style="padding:10px 16px">Back</button><b class="d">Silent focus</b></div>
+  <div class="cd" style="text-align:center"><div class="mu">Everyone’s 50 minute block ends together. Chat is off.</div><div class="big" id="rt" style="font-size:64px;margin:12px 0;color:var(--pu)">${fmt(l)}</div>
+  <div class="seats">${ps.slice(0,8).map(p=>`<div class="seat" style="--k:${p.isMe?'var(--gr)':'var(--cy)'}"><div class="av">${esc(ini(p.presence.name))}</div>${esc(p.isMe?'You':p.presence.name.split(' ')[0])}</div>`).join('')}</div></div>`}
+
+function you(){const D=S.D,r=rank(),x=xp(),nx=RANKS[r+1],pr=nx?(x-RANKS[r][1])/(nx[1]-RANKS[r][1]):1;
+  return `<div class="cd"><div class="row" style="justify-content:flex-start;gap:14px"><span class="av" style="width:68px;height:68px;font-size:24px">${esc(ini(D.name))}</span><div style="min-width:0"><h1 style="font-size:21px">${esc(D.name)}</h1><div class="mu">${esc([D.age,D.loc].filter(Boolean).join(' · ')||'Add your age and location')}</div><div class="mu" style="overflow-wrap:anywhere">${esc(S.email)}</div></div></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">${D.skills.map(s=>`<span class="chip on">${esc(s)}</span>`).join('')}</div>${S.editing?`<input id="en" value="${esc(D.name)}" aria-label="Name" placeholder="Name"><input id="ea" value="${esc(D.age)}" aria-label="Age" placeholder="Age"><input id="el" value="${esc(D.loc)}" aria-label="Location" placeholder="Location"><input id="ek" value="${esc(D.skills.join(', '))}" aria-label="Skills" placeholder="Core skills, comma separated"><button class="cta" id="esave" style="margin-top:12px;width:100%">Save profile</button>`:`<button class="gh" id="edit" style="margin-top:14px;width:100%">Edit profile</button>`}</div>
+  <div class="cd"><h2>Rank and XP</h2><div class="big" style="color:var(--pu)">${RANKS[r][0]}</div><div class="mu">${x} XP${nx?` · ${nx[1]-x} to ${nx[0]}`:' · top rank'} · Unlocked: ${PERK[RANKS[r][0]]}</div>
+  <div class="bar" style="margin-top:12px"><i style="width:${pr*100}%;background:var(--pu)"></i></div>
+  <div class="st"><div><b style="color:var(--cy)">${hrs().toFixed(1)}h</b><span class="mu">Deep work</span></div><div><b>${D.sessions.length}</b><span class="mu">Sessions</span></div><div><b style="color:var(--gr)">${streak()}</b><span class="mu">Day streak</span></div></div>
+  <div style="display:flex;gap:6px;margin-top:14px">${RANKS.map((q,i)=>`<div class="rk ${i<=r?'on':''}">${q[0]}</div>`).join('')}</div></div>
+  <div class="cd"><h2>Activity</h2><div style="display:flex;gap:8px"><input id="pi" placeholder="Share an insight or win" aria-label="New post" style="margin:0"><button class="gh" id="pp">Post</button></div>
+  ${D.sessions.length?`<button class="chip" id="share" style="margin-top:10px">Share my progress</button>`:''}
+  <div style="margin-top:8px">${D.posts.length?D.posts.slice().reverse().map(p=>`<div style="padding:12px 0;border-top:1px solid var(--ln)"><b>${esc(p.t)}</b><div class="mu">${new Date(p.at).toLocaleDateString()}</div></div>`).join(''):'<p class="mu" style="padding:12px 0">No posts yet. Your achievements and insights appear here.</p>'}</div></div>`}
+
+function auth(m){m=m||'in';return `<div class="auth"><div class="brand" style="font-size:34px;margin-bottom:6px">${MARK.replace(/26/g,'38')}apexfy</div><p class="mu" style="margin-bottom:26px">Deep focus, together.</p>
+  <h1 style="font-size:24px">${m==='in'?'Sign in':'Create account'}</h1>
+  ${m==='up'?'<input id="an" placeholder="Full name" autocomplete="name" aria-label="Full name">':''}
+  <input id="ae" type="email" placeholder="Email" autocomplete="email" aria-label="Email"><input id="ap" type="password" placeholder="Password (8+ characters)" autocomplete="${m==='in'?'current-password':'new-password'}" aria-label="Password">
+  <div class="err" id="er" role="alert"></div><button class="cta" id="auth" data-m="${m}" style="margin-top:8px;width:100%">${m==='in'?'Sign in':'Create account'}</button>
+  <button class="mu" id="sw" data-m="${m==='in'?'up':'in'}" style="margin-top:16px;padding:8px">${m==='in'?'New here? Create an account':'Already have an account? Sign in'}</button>
+  <p class="mu" style="margin-top:18px;font-size:12px">Your account and data are saved on this device only.</p></div>`}
+
+function render(keep){
+  const app=$('#app');app.classList.toggle('focus',!!(S.email&&S.run));
+  if(!S.email){$('#view').innerHTML=auth(S.am);return}
+  const keepS=$('#main')?.scrollTop;
+  $('#view').innerHTML=`<div class="top"><button class="ib" id="menu" aria-label="Menu"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h16M3 11h16M3 16h10"/></svg></button><div class="brand">${MARK}apexfy</div><div style="display:flex"><button class="ib" id="srch" aria-label="Search"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l4 4"/></svg></button><button class="ib" id="prof" aria-label="Profile"><span class="av" style="width:30px;height:30px">${esc(ini(S.D.name))}</span></button></div></div>
+  <main id="main">${S.tab==='flow'?flow():S.tab==='comm'?comm():you()}</main>
+  <nav class="pill">${[['flow','FlowSpace','<path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/>'],['comm','Community','<path d="M4 5h16v11H9l-5 4z"/>'],['you','You','<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/>']].map(([k,n,p])=>`<button data-t="${k}" class="${S.tab===k?'on':''}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">${p}</svg>${n}</button>`).join('')}</nav>`;
+  if(keep&&keepS!=null)$('#main').scrollTop=keepS;paint();pres()}
+setInterval(()=>{const e=$('#rt');if(e&&S.room?.silent)e.textContent=fmt(BLOCK-(Date.now()/1000%BLOCK))},1000);
+
+function dr(o){const d=$('#dr');if(o)d.innerHTML=`<div class="brand" style="margin-bottom:18px">${MARK}apexfy</div>
+  <div class="row"><span>Dark mode</span><button class="tog cy ${S.theme==='dark'?'on':''}" id="dm" aria-label="Dark mode"></button></div>
+  <div class="row"><span>Haptic feedback</span><button class="tog cy ${S.haptic?'on':''}" id="hp" aria-label="Haptics"></button></div>
+  <div class="row"><span>Strict Mode</span><button class="tog ${S.strict?'on':''}" id="st2" aria-label="Strict Mode"></button></div>
+  ${instRow()}
+  <div class="row"><div>App blocker<div class="mu">Browsers can’t block other apps. Strict Mode here penalizes leaving Apexfy. Full blocking needs the native app.</div></div></div>
+  <h2 style="margin-top:20px">Analytics archive</h2>${S.D.sessions.length?S.D.sessions.slice(-12).reverse().map(s=>`<div class="row" style="padding:8px 0"><span style="min-width:0"><b>${esc(s.task)}</b><div class="mu">${new Date(s.t).toLocaleDateString()} · ${s.min} min</div></span><span class="mu" style="color:${s.dist?'var(--rd)':'var(--gr)'}">${s.dist?s.dist+' distractions':'Clean'}</span></div>`).join(''):'<p class="mu">Finished sessions are archived here.</p>'}
+  <button class="gh" id="out" style="margin-top:22px;width:100%;color:var(--rd)">Sign out</button>`;
+  d.classList.toggle('on',o);$('#scrim').classList.toggle('on',o)}
+
+/* ---------- events ---------- */
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const id=b.id,q=b.dataset;
+  if(id==='auth'){const em=($('#ae').value||'').trim().toLowerCase(),pw=$('#ap').value,er=$('#er');er.textContent='';
+    if(!/^\S+@\S+\.\S+$/.test(em))return er.textContent='Enter a valid email address.';if(pw.length<8)return er.textContent='Password needs at least 8 characters.';
+    try{if(q.m==='up'){const n=($('#an').value||'').trim();if(!n)return er.textContent='Enter your name.';await signUp(n,em,pw)}else await signIn(em,pw)}catch(x){er.textContent=typeof x==='string'?x:'Something went wrong. Try again.'}return}
+  if(id==='sw'){S.am=q.m;render();return}
+  if(q.t){S.tab=q.t;S.room=null;buzz(8);render()}
+  else if(id==='go')start();
+  else if(id==='stop')done(false);
+  else if(q.m){S.mode=q.m;if(q.l)S.len=+q.l;S.brk=false;render()}
+  else if(id==='strict'||id==='st2'){S.strict=!S.strict;ls.set('apx_strict',S.strict);buzz();if(id==='st2')dr(true);else render(true)}
+  else if(id==='ta'){const i=$('#ti'),v=i.value.trim();if(v){const t={id:Date.now(),t:v,done:false};S.D.tasks.push(t);if(!S.D.cur)S.D.cur=t.id;save();render(true)}}
+  else if(q.cur){S.D.cur=+q.cur;save();buzz(8);render(true)}
+  else if(q.done){const t=S.D.tasks.find(x=>x.id===+q.done);t.done=!t.done;if(t.done){say('Task complete');buzz([20,40,20]);if(S.D.cur===t.id)S.D.cur=(S.D.tasks.find(x=>!x.done)||{}).id||null}save();render(true)}
+  else if(q.del){S.D.tasks=S.D.tasks.filter(x=>x.id!==+q.del);if(S.D.cur===+q.del)S.D.cur=null;save();render(true)}
+  else if(q.s){S.snd===q.s?stopSound():playSound(q.s);buzz(8);render(true)}
+  else if(q.r){S.room={n:q.r,silent:q.r==='Silent focus'};buzz(8);render()}
+  else if(id==='back'){S.room=null;render()}
+  else if(id==='snd')sendMsg();
+  else if(id==='ask'){S.aiBusy=true;render(true);try{const sm=S.D.sessions.slice(-20).map(s=>({h:new Date(s.t).getHours(),min:s.min,dist:s.dist,task:s.task}));const r=await S.sample(`You are a concise productivity coach. Given these focus sessions as JSON, give 3 short, specific tips (peak hours, distractions, next step). Under 70 words, plain text, no markdown.\n${JSON.stringify(sm)}`,{modelTier:'quick'});S.ai=r.text}catch(x){say('Coach is unavailable right now.',1)}S.aiBusy=false;render(true)}
+  else if(id==='menu')dr(true);
+  else if(id==='dm'){S.theme=S.theme==='dark'?'light':'dark';ls.set('apx_theme',S.theme);document.documentElement.dataset.theme=S.theme;dr(true)}
+  else if(id==='hp'){S.haptic=!S.haptic;dr(true)}
+  else if(id==='inst'){if(DP)DP.prompt()}
+  else if(id==='out')logout();
+  else if(id==='prof'){S.tab='you';S.room=null;render()}
+  else if(id==='srch'){$('#sb').classList.add('on');$('#q').focus()}
+  else if(id==='sx')$('#sb').classList.remove('on');
+  else if(q.go){$('#sb').classList.remove('on');const[k,v]=q.go.split('|');if(k==='r'){S.tab='comm';S.room={n:v,silent:v==='Silent focus'}}else S.tab=k==='t'?'flow':'you';render()}
+  else if(id==='pp'){const i=$('#pi');if(i.value.trim()){S.D.posts.push({t:i.value.trim(),at:Date.now()});save();render(true)}}
+  else if(id==='share'){S.D.posts.push({t:`${hrs().toFixed(1)}h of deep work, ${xp()} XP, rank ${RANKS[rank()][0]}, ${streak()} day streak.`,at:Date.now()});save();say('Shared to your activity');render(true)}
+  else if(id==='edit'){S.editing=true;render(true)}
+  else if(id==='esave'){S.D.name=$('#en').value.trim()||S.D.name;S.D.age=$('#ea').value.trim();S.D.loc=$('#el').value.trim();S.D.skills=$('#ek').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);S.editing=false;save();render(true)}
+});
+$('#scrim').onclick=()=>dr(false);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='ap')$('#auth').click();if(e.key==='Enter'&&e.target.id==='mi'&&!e.shiftKey){e.preventDefault();sendMsg()}if(e.key==='Escape'){dr(false);$('#sb').classList.remove('on')}});
+$('#q').oninput=e=>{if(!S.D)return;const v=e.target.value.toLowerCase().trim();if(!v){$('#sr').innerHTML='';return}
+  const hits=[];CH.forEach(([c,l])=>l.forEach(n=>n.toLowerCase().includes(v)&&hits.push(['r|'+n,'#',n])));S.D.tasks.forEach(t=>t.t.toLowerCase().includes(v)&&hits.push(['t|x','Task',t.t]));S.D.posts.forEach(p=>p.t.toLowerCase().includes(v)&&hits.push(['y|x','Post',p.t]));
+  $('#sr').innerHTML=hits.length?hits.map(h=>`<button class="ch" data-go="${esc(h[0])}"><span class="mu" style="width:40px">${h[1]}</span><span style="text-align:left">${esc(h[2])}</span></button>`).join(''):'<p class="mu">No matches. Try a room, task or post.</p>'};
+/* ---------- install as app (PWA) ---------- */
+let DP=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();DP=e});
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+function instRow(){if(standalone)return'';return `<div class="row"><div>Install as an app<div class="mu">${DP?'Add Apexfy to your home screen.':ios?'In Safari tap Share, then Add to Home Screen.':'In Chrome open the menu, then Install app or Add to Home screen.'}</div></div>${DP?'<button class="gh" id="inst">Install</button>':''}</div>`}
+const ss=ls.get('apx_session',null);if(ss&&ls.get('apx_d_'+ss,null)){login(ss)}else render();
+</script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
+</body>
+</html>
