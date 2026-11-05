@@ -100,6 +100,10 @@ pre{background:#05080f;color:#c8d6ee;border:1px solid var(--ln);border-radius:12
 .ov{position:absolute;inset:0;background:rgba(0,0,0,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;gap:14px;color:#EEF3FA}.ov .mu{color:#8795AC}
 .ga{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:var(--c2);flex:none;overflow:hidden}.ga img{width:100%;height:100%;object-fit:cover}
 .po img{width:100%;border-radius:14px;margin-top:10px;display:block}.po a,.lk a{color:var(--cy)}
+
+.cd button.tk{width:100%}
+.dsb{display:flex;gap:8px}
+@media (prefers-reduced-motion:reduce){.x{}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -132,7 +136,7 @@ async function signUp(name,email,pw){
   const salt=crypto.getRandomValues(new Uint32Array(2)).join('');U[email]={salt,h:await hash(pw,salt)};ls.set('apx_users',U);
   ls.set('apx_d_'+email,{name,age:'',loc:'',skills:['App development','UI/UX design'],tasks:[],sessions:[],posts:[],cur:null});login(email)}
 async function signIn(email,pw){const u=ls.get('apx_users',{})[email];if(!u||await hash(pw,u.salt)!==u.h)throw'Email or password is incorrect.';login(email)}
-function login(email){S.email=email;S.D=ls.get('apx_d_'+email);S.D.goals=S.D.goals||[];S.D.bio=S.D.bio||'';S.D.links=S.D.links||[];S.D.dgoal=S.D.dgoal||120;S.D.seen=S.D.seen||[];S.D.joined=S.D.joined||[];S.uid=[...email].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7).toString(16);S.dm=null;ls.set('apx_session',email);S.tab='flow';S.room=null;joinRoom();render()}
+function login(email){S.email=email;S.D=ls.get('apx_d_'+email);S.D.goals=S.D.goals||[];S.D.bio=S.D.bio||'';S.D.links=S.D.links||[];S.D.dgoal=S.D.dgoal||120;S.D.seen=S.D.seen||[];S.D.joined=S.D.joined||[];migrate();S.uid=[...email].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7).toString(16);S.dm=null;ls.set('apx_session',email);S.tab='flow';S.room=null;joinRoom();render()}
 function logout(){stopSound();clearInterval(tk);S.run=false;S.email=null;S.D=null;ls.set('apx_session',null);dr(false);render()}
 const save=()=>ls.set('apx_d_'+S.email,S.D);
 
@@ -150,14 +154,15 @@ function tip(){const sc=score(),p=peak(),ds=S.D.sessions.slice(-5).reduce((a,s)=
 /* ---------- timer (timestamp based, so it stays accurate in background) ---------- */
 let tk=null;
 const left=()=>Math.max(0,Math.round((S.end-Date.now())/1000));
-function start(){S.run=true;S.dist=0;S.start=Date.now();if(S.mode==='pomo')S.end=Date.now()+(S.brk?5:S.len)*60000;buzz(30);if(S.strict&&S.mode==='pomo'&&!S.brk)lockOn();tk=setInterval(tick,500);render()}
+function start(){S.run=true;S.dist=0;S.start=Date.now();if(S.mode==='pomo')S.end=Date.now()+segMin()*60000;buzz(30);if(S.strict&&S.mode==='pomo'&&!S.brk)lockOn();tk=setInterval(tick,500);render()}
 function tick(){if(S.mode==='pomo'&&left()<=0)return done(true);paint()}
-function paint(){const t=$('#tt');if(!t)return;const sec=S.mode==='pomo'?left():Math.round((Date.now()-S.start)/1000);t.textContent=fmt(sec);const tot=S.brk?300:S.len*60;const p=S.mode==='pomo'?1-sec/tot:(sec%3600)/3600;$('#arc').setAttribute('stroke-dashoffset',(691*(1-p)).toFixed(1))}
-function done(full){clearInterval(tk);lockOff();const el=(Date.now()-S.start)/60000;const min=full?(S.brk?0:S.len):Math.floor(el);S.run=false;
-  if(!S.brk&&min>=1){const g=Math.max(0,min*5-S.dist*10);S.D.sessions.push({t:Date.now(),min,dist:S.dist,task:cur()?.t||'Open focus',mode:S.mode});const gl=S.D.goals.find(x=>x.id===S.D.gcur&&!x.done);if(gl){gl.min+=min;if(gl.min>=gl.target){gl.done=true;S.D.gcur=null;setTimeout(()=>say('Goal complete: '+gl.t),2400)}}save();setTimeout(checkBadges,4600);
-    say(`+${g} XP · ${min} min logged`+(S.dist?` · ${S.dist} distraction penalty`:''));buzz([40,60,40])}
-  else if(!S.brk)say('Session too short to log');
-  if(S.mode==='pomo'&&full)S.brk=!S.brk;else S.brk=false;render()}
+function paint(){const t=$('#tt');if(!t)return;const sec=S.mode==='pomo'?left():Math.round((Date.now()-S.start)/1000);t.textContent=fmt(sec);const tot=segMin()*60;const p=S.mode==='pomo'?1-sec/tot:(sec%3600)/3600;$('#arc').setAttribute('stroke-dashoffset',(691*(1-p)).toFixed(1))}
+function done(full){clearInterval(tk);lockOff();const wasBrk=S.brk,seg=S.q&&S.q[S.qi],el=(Date.now()-S.start)/60000,min=S.mode==='pomo'&&full?(seg?seg.min:S.len):Math.floor(el);S.run=false;const t=cur();
+ if(!wasBrk&&min>=1){const g=Math.max(0,min*5-S.dist*10);S.D.sessions.push({t:Date.now(),min,dist:S.dist,plan:S.mode==='pomo'?(seg?seg.min:S.len):min,task:t?t.t:'Open focus',tid:t?t.id:null,mode:S.mode});
+  if(t&&spent(t.id)>=t.est*60&&!t.done){t.done=true;t.doneAt=Date.now();setTimeout(()=>say('Task complete: '+t.t),2400)}
+  save();setTimeout(checkBadges,4600);say(`+${g} XP · ${min} min logged`+(S.dist?` · ${S.dist} distraction penalty`:''));buzz([40,60,40])}
+ else if(!wasBrk)say('Session too short to log');
+ advance(full,wasBrk);render()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.run&&!S.brk&&S.strict!==false){S.dist++;S.hid=1}else if(!document.hidden&&S.hid){S.hid=0;buzz([60,40,60]);if(S.lockOn){S.warn='away';render(true)}else say('Distraction logged. Strict Mode penalty applied.',1)}});
 S.strict=ls.get('apx_strict',true);
 const cur=()=>S.D.tasks.find(t=>t.id===S.D.cur&&!t.done);
@@ -204,27 +209,125 @@ function overlay(){let o='';
  return o}
 
 /* flowspace */
-function goalRow(g,full){const p=Math.min(100,g.min/g.target*100);return `<div style="padding:10px 0;border-top:1px solid var(--ln)"><div class="row"><button data-gcur="${g.id}" style="text-align:left;flex:1;${g.id===S.D.gcur?'color:var(--cy)':''}"><b>${esc(g.t)}</b></button><span class="mu">${g.done?'<span style="color:var(--gr)">Done</span>':Math.round(g.min)+' / '+g.target+' min'}</span>${full?`<button class="mu" data-gdel="${g.id}" aria-label="Delete goal">✕</button>`:''}</div><div class="bar" style="margin-top:8px"><i style="width:${p}%;background:${g.done?'var(--gr)':'var(--cy)'}"></i></div></div>`}
-const gform=`<div style="display:flex;gap:8px;margin-top:10px"><input id="gi" placeholder="New goal" aria-label="Goal" style="margin:0"><input id="gm" type="number" inputmode="numeric" placeholder="min" aria-label="Target minutes" style="margin:0;width:76px"><button class="gh" id="ga">Add</button></div>`;
+
+/* ===== planning engine: goals > plans (task tables) > tasks > pomodoro ===== */
+const DAY=864e5;
+function ymd(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const TODAY=()=>ymd(Date.now());
+const ymdAdd=(x,n)=>ymd(new Date(x+'T12:00:00').getTime()+n*DAY);
+const wkS=x=>{const d=new Date(x+'T12:00:00');return ymd(d.getTime()-((d.getDay()+6)%7)*DAY)};
+const spent=(tid,upto)=>S.D.sessions.filter(x=>x.tid===tid&&(!upto||ymd(x.t)<=upto)).reduce((a,x)=>a+x.min,0);
+const doneBy=(t,d)=>t.done&&ymd(t.doneAt||Date.now())<=d;
+function tasksOn(pid,d,sc){return S.D.tasks.filter(t=>t.est!=null&&(!pid||t.pid===pid)&&t.scope===sc&&(sc==='daily'?t.date===d:sc==='weekly'?wkS(t.date)===wkS(d):t.date.slice(0,7)===d.slice(0,7)))}
+function migrate(){const D=S.D,td=TODAY();D.plans=D.plans||[];if(!D.plans.length)D.plans.push({id:'inbox',name:'Inbox'});D.reviews=D.reviews||{};
+ D.tasks.forEach(t=>{if(t.est==null){t.est=1;t.scope='daily';t.date=td;t.pid='inbox'}});
+ D.goals=D.goals.filter(g=>g&&g.t);
+ D.goals.forEach(g=>{if(!g.pid){const p={id:'p'+g.id,name:g.t};D.plans.push(p);g.pid=p.id;g.start=td;g.due=ymd(Date.now()+30*DAY);if(g.target)D.tasks.push({id:Date.now()+Math.floor(Math.random()*1e4),pid:p.id,t:g.t,scope:'daily',date:td,est:Math.max(.5,g.target/60),done:!!g.done,doneAt:g.done?Date.now():null})}});
+ if(!D.agoal)D.agoal=(D.goals.find(g=>!g.done)||{}).id||null;
+ const y=ymd(Date.now()-DAY);if(D.sessions.some(x=>ymd(x.t)===y)&&!D.reviews[y])D.reviews[y]=reviewDay(y);
+ S.q=null;S.qi=0;S.fv=null;S.sg=null;S.pl=null;S.sd=null}
+function buildQ(tid){const t=S.D.tasks.find(x=>x.id===tid);if(!t)return null;let r=t.est*60-spent(tid);if(r<=0)return null;const W=S.len,B=W===50?10:5,L=[];let n=0;
+ while(r>0&&L.length<60){const w=Math.min(W,Math.round(r));if(w<5&&L.length){L.pop();L[L.length-1].min+=w;break}L.push({type:'work',min:Math.max(1,w)});r-=w;n++;if(r>0)L.push({type:'break',min:n%4===0?15:B})}
+ return L}
+const segMin=()=>S.mode==='pomo'&&S.q&&S.q[S.qi]?S.q[S.qi].min:(S.brk?5:S.len);
+function loadTask(id){S.D.cur=id;save();S.mode='pomo';S.brk=false;S.qi=0;const t=cur();S.q=t?buildQ(t.id):null;buzz(8)}
+function advance(full,wasBrk){const t=cur();
+ if(S.mode!=='pomo'||!S.q){S.brk=S.mode==='pomo'&&full?!wasBrk:false;return}
+ if(!wasBrk&&!full){S.q=t&&!t.done?buildQ(t.id):null;S.qi=0;S.brk=false;return}
+ S.qi++;
+ if(S.qi>=S.q.length||(t&&t.done)){S.q=null;S.qi=0;S.brk=false;if(t&&!t.done)S.q=buildQ(t.id);return}
+ S.brk=S.q[S.qi].type==='break'}
+function gstat(g){const ts=S.D.tasks.filter(t=>t.pid===g.pid&&t.est!=null),plan=ts.reduce((a,t)=>a+t.est*60,0),credit=ts.reduce((a,t)=>a+(t.done?t.est*60:Math.min(spent(t.id),t.est*60)),0),act=ts.reduce((a,t)=>a+spent(t.id),0),p=plan?credit/plan:0,a=new Date(g.start+'T00:00:00').getTime(),b=new Date(g.due+'T23:59:59').getTime(),ex=Math.max(0,Math.min(1,(Date.now()-a)/Math.max(1,b-a)));
+ return{plan,act,p,ex,n:ts.length,dn:ts.filter(t=>t.done).length,ok:g.done||!plan||p>=ex-.05}}
+function goalBar(g,st){const c=!st.n?'var(--cy)':st.ok?'var(--gr)':'var(--rd)';return `<div style="margin-top:10px"><div class="row"><b>${esc(g.t)}</b><span style="color:${c};font-weight:700;font-size:13px">${g.done?'Completed':!st.n?'No tasks yet':st.ok?'On track':'Behind schedule'}</span></div><div class="bar" style="margin-top:8px;position:relative"><i style="width:${Math.min(100,st.p*100)}%;background:${c}"></i><u style="position:absolute;left:${st.ex*100}%;top:0;bottom:0;width:2px;background:var(--tx);opacity:.5"></u></div><div class="mu" style="margin-top:6px">${Math.round(st.p*100)}% done · ${Math.round(st.ex*100)}% of time used · due ${esc(g.due)}</div></div>`}
+
+/* AI coach: diagnostic only */
+function dayM(d){const ss=S.D.sessions.filter(x=>ymd(x.t)===d),ds=S.D.tasks.filter(t=>t.est!=null&&t.scope==='daily'&&t.date===d);
+ return{n:ss.length,tot:ss.reduce((a,x)=>a+x.min,0),dist:ss.reduce((a,x)=>a+x.dist,0),short:ss.filter(x=>x.plan&&x.min<x.plan*.8).length,first:ss.length?Math.min(...ss.map(x=>new Date(x.t).getHours())):null,plan:ds.reduce((a,t)=>a+t.est*60,0),tasks:ds.length,done:ds.filter(t=>doneBy(t,d)).length,un:ds.filter(t=>!doneBy(t,d)&&!ss.some(x=>x.tid===t.id)).map(t=>t.t)}}
+function coachDay(d){const m=dayM(d),e=[],l=[],t=[],pk=peak(),over=S.D.tasks.filter(x=>x.est!=null&&spent(x.id)>x.est*60*1.2);
+ if(m.dist){e.push(m.dist+' distraction'+(m.dist>1?'s':'')+': you left the app mid-session. Each one broke the block and cost XP.');t.push('Turn on Strict Mode and silence notifications before you press start.')}
+ if(m.short){e.push(m.short+' session'+(m.short>1?'s':'')+' ended before 80% of the planned block.');t.push('Finish every block you start. Use 25 minute blocks if 50 is too long.')}
+ if(m.un.length){e.push('Planned but never started: '+m.un.slice(0,3).join(', ')+'.');t.push('Start the skipped task first thing tomorrow, before anything else.')}
+ if(over.length){e.push('Underestimated: "'+over[0].t+'" ran '+Math.round((spent(over[0].id)/(over[0].est*60)-1)*100)+'% over its estimate.');t.push('Add a 30% buffer when you estimate similar tasks.')}
+ if(!m.n&&m.plan&&d===TODAY()&&new Date().getHours()>=14)e.push('No focus session today with '+(m.plan/60).toFixed(1)+'h planned.');
+ if(m.first!=null&&pk!=null&&m.first>pk+2)l.push('First session started at '+m.first+':00, well after your peak hour ('+pk+':00). Peak energy went unused.');
+ if(m.n>=3&&m.tot/m.n<20)l.push('Average block is '+Math.round(m.tot/m.n)+' minutes. Short blocks pay a restart cost every time.');
+ if(m.plan&&m.n&&m.tot<m.plan*.6)l.push('Only '+(m.tot/60).toFixed(1)+'h of '+(m.plan/60).toFixed(1)+'h planned was spent. The gap is lost time.');
+ if(pk!=null&&!t.length)t.push('Schedule your hardest task at '+pk+':00, your peak hour.');
+ if(m.n&&!t.length)t.push('Add one more focused block tomorrow.');
+ return{err:e.slice(0,3),leak:l.slice(0,3),tip:t.slice(0,3),m}}
+function reviewDay(d){const c=coachDay(d),m=c.m;
+ return [`Focus ${(m.tot/60).toFixed(1)}h in ${m.n} session${m.n===1?'':'s'}. Planned ${(m.plan/60).toFixed(1)}h, actual ${(m.tot/60).toFixed(1)}h.`,`Tasks completed: ${m.done}/${m.tasks}. Distractions: ${m.dist}.`,c.err[0]?'Main error: '+c.err[0]:'Main error: none detected.',c.leak[0]?'Main leak: '+c.leak[0]:'Main leak: none detected.','Tomorrow: '+(c.tip[0]||'Repeat today’s structure.')].join('\n')}
+function reviewGoal(g){const st=gstat(g),ts=S.D.tasks.filter(t=>t.pid===g.pid&&t.est!=null),ids=ts.map(t=>t.id),ss=S.D.sessions.filter(x=>ids.includes(x.tid)),dist=ss.reduce((a,x)=>a+x.dist,0),over=ts.filter(t=>spent(t.id)>t.est*60*1.2);
+ return [`Goal "${g.t}": ${st.dn}/${st.n} tasks done. Planned ${(st.plan/60).toFixed(1)}h, actual ${(st.act/60).toFixed(1)}h.`,`Schedule: ${st.ok?'on track':'behind'} (${Math.round(st.p*100)}% done, ${Math.round(st.ex*100)}% of time used).`,dist?'Error: '+dist+' distraction'+(dist>1?'s':'')+' across this goal’s sessions.':'Error: no distractions logged on this goal.',over.length?'Leak: "'+over[0].t+'" overran its estimate. Estimates for this work are too low.':(st.plan&&st.act<st.plan*.8?'Leak: '+((st.plan-st.act)/60).toFixed(1)+'h of planned time was never spent.':'Leak: none significant.'),'Next goal: '+(over.length?'add a 30% buffer to estimates.':dist?'start every block in Strict Mode.':'raise planned hours by 10%.')].join('\n')}
+const coachBlock=(t,c,a)=>a.length?`<div style="margin-top:12px"><div style="font:700 12px Sora,sans-serif;color:${c};letter-spacing:.04em;text-transform:uppercase">${t}</div>${a.map(x=>`<p style="margin-top:6px;font-size:15px">${esc(x)}</p>`).join('')}</div>`:'';
+
+/* views */
+function dstrip(){const t=TODAY();S.sd=S.sd||t;return `<div class="sc" id="dsc" style="margin-top:8px">${[...Array(14)].map((_,i)=>{const d=ymdAdd(t,i-9),x=new Date(d+'T12:00:00');return `<button data-sd="${d}" class="${d===S.sd?'on':''}" style="width:56px;text-align:center;padding:10px 4px"><span>${x.toLocaleDateString([],{weekday:'short'}).slice(0,3)}</span><b>${x.getDate()}</b>${d===t?'<span style="color:var(--cy)">today</span>':''}</button>`}).join('')}</div>`}
+function taskRow(t,d,ro){const sp=spent(t.id,d),pl=t.est*60,dn=doneBy(t,d),sd=S.D.sessions.filter(x=>x.tid===t.id&&ymd(x.t)===d).reduce((a,x)=>a+x.min,0);
+ return `<div class="tk ${t.id===S.D.cur&&!t.done?'cur':''}" style="flex-wrap:wrap"><button class="ck ${dn?'d':''}" ${ro?'disabled':`data-done="${t.id}"`} aria-label="Complete">${dn?'✓':''}</button><button class="nm" ${ro?'disabled':`data-cur="${t.id}"`} style="${dn?'text-decoration:line-through;color:var(--mu)':''}"><b>${esc(t.t)}</b><div class="mu">${Math.round(sp)}m / ${t.est}h${sd?' · '+sd+'m that day':''}${ro?'':' · tap to load into timer'}</div></button>${ro?'':`<button class="mu" data-del="${t.id}" aria-label="Delete">✕</button>`}<div class="bar" style="width:100%"><i style="width:${Math.min(100,sp/pl*100)}%"></i></div></div>`}
+const addForm=()=>`<div class="cd"><h2>Add task</h2><input id="tt2" placeholder="Task title" aria-label="Task title" value="${esc(S.tt||'')}" style="margin-top:0"><div style="display:flex;gap:8px;margin-top:8px">${[['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].map(([k,n])=>`<button class="chip ${(S.ts||'daily')===k?'on':''}" data-ts="${k}">${n}</button>`).join('')}</div><div style="display:flex;gap:8px;margin-top:8px"><input id="te" type="number" inputmode="decimal" step="0.5" min="0.5" placeholder="Estimated hours" aria-label="Estimated hours" value="${esc(S.te||'')}" style="margin:0"><button class="cta" id="ta" style="padding:12px 20px">Add</button></div></div>`;
+function planV(){S.sd=S.sd||TODAY();const D=S.D,pl=D.plans.find(x=>x.id===S.pl)||D.plans[0],g=D.goals.find(x=>x.pid===pl.id),d=S.sd,ro=d<TODAY();
+ const sec=(t,l)=>`<div class="cd"><h2>${t}</h2>${l.length?l.map(x=>taskRow(x,d,ro)).join(''):'<p class="mu">Nothing here.</p>'}</div>`;
+ const logs=D.sessions.filter(x=>ymd(x.t)===d&&D.tasks.some(t=>t.id===x.tid&&t.pid===pl.id));
+ return `<div class="cd"><div class="mu">Task plan</div><h1 class="d" style="font-size:20px">${esc(pl.name)}</h1>${g?goalBar(g,gstat(g)):'<p class="mu" style="margin-top:8px">No goal linked to this plan. Link one when you create a goal.</p>'}</div>`+dstrip()+(ro?'<p class="mu" style="margin-top:8px">History view. Read-only.</p>':'')+sec('Daily · '+d,tasksOn(pl.id,d,'daily'))+sec('This week',tasksOn(pl.id,d,'weekly'))+sec('This month',tasksOn(pl.id,d,'monthly'))+(ro?`<div class="cd"><h2>Logs · ${d}</h2>${logs.map(x=>`<div class="row" style="padding:6px 0"><span>${new Date(x.t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${esc(x.task)}</span><span class="mu">${x.min}m${x.dist?' · '+x.dist+' dist.':''}</span></div>`).join('')||'<p class="mu">No sessions logged.</p>'}</div>`:addForm())}
+function goalsV(){const D=S.D,free=D.plans.filter(p=>!D.goals.some(g=>g.pid===p.id));
+ return `<div class="cd"><h2>Daily focus goal</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${[60,120,180,240].map(m=>`<button class="chip ${(D.dgoal||120)===m?'on':''}" data-dg="${m}">${m/60}h</button>`).join('')}</div></div>
+ <div class="cd"><h2>New goal</h2><input id="gi" placeholder="Goal title" aria-label="Goal title" style="margin-top:0"><div style="display:flex;gap:8px;margin-top:8px"><input id="gd" type="date" value="${ymd(Date.now()+30*DAY)}" aria-label="Deadline" style="margin:0"><select id="gp" aria-label="Task plan" style="flex:1;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;color:var(--tx)"><option value="new">New task plan</option>${free.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div><button class="cta" id="ga" style="margin-top:12px;width:100%">Create goal</button></div>`
+ +(D.goals.map(g=>`<div class="cd"><button data-fv="plan" data-pl="${esc(g.pid)}" style="text-align:left;width:100%"><b class="d" style="font-size:17px">Open task plan ›</b></button>${goalBar(g,gstat(g))}<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${g.id===D.agoal&&!g.done?'<span class="chip on">Active</span>':!g.done?`<button class="chip" data-gact="${g.id}">Set active</button>`:''}${!g.done?`<button class="chip" data-gfin="${g.id}">Complete goal</button>`:''}<button class="chip" data-gdel="${g.id}" style="color:var(--rd)">Delete</button></div>${g.review?`<p style="margin-top:12px;white-space:pre-wrap;font-size:14px">${esc(g.review)}</p>`:''}</div>`).join('')||'<p class="mu" style="padding:14px 0">No goals yet. Create one and link a task plan.</p>')}
+function drill(g,d){const ts=S.D.tasks.filter(t=>t.pid===g.pid&&t.est!=null),ids=ts.map(t=>t.id),days=[...Array(7)].map((_,i)=>ymdAdd(d,i-6)),tb='style="width:100%;border-collapse:collapse;font-size:13px"';
+ return `<div class="cd"><div class="row"><h2 style="margin:0">${esc(g.t)}</h2><span class="mu">as of ${d}</span></div>${dstrip()}
+ <div style="overflow-x:auto;margin-top:10px"><table ${tb}><tr class="mu"><td>Task</td><td>Plan h</td><td>Actual h</td><td>Status</td></tr>${ts.map(t=>{const a=spent(t.id,d)/60,dn=doneBy(t,d);return `<tr style="border-top:1px solid var(--ln)"><td style="padding:8px 8px 8px 0">${esc(t.t)}</td><td>${t.est}</td><td>${a.toFixed(1)}</td><td style="color:${dn?'var(--gr)':a>0?'var(--cy)':'var(--mu)'}">${dn?'Done':a>0?'In progress':'Open'}</td></tr>`}).join('')||'<tr><td class="mu" colspan="4">No tasks in this plan.</td></tr>'}</table></div>
+ <h2 style="margin-top:16px">Daily log</h2><div style="overflow-x:auto"><table ${tb}><tr class="mu"><td>Date</td><td>Planned h</td><td>Actual h</td><td>Done</td></tr>${days.map(x=>{const pl=ts.filter(t=>t.scope==='daily'&&t.date===x),pm=pl.reduce((a,t)=>a+t.est,0),am=S.D.sessions.filter(v=>ids.includes(v.tid)&&ymd(v.t)===x).reduce((a,v)=>a+v.min,0)/60;return `<tr style="border-top:1px solid var(--ln)"><td style="padding:8px 8px 8px 0">${x.slice(5)}</td><td>${pm.toFixed(1)}</td><td>${am.toFixed(1)}</td><td>${pl.filter(t=>doneBy(t,x)).length}/${pl.length}</td></tr>`}).join('')}</table></div></div>`}
+function statsV(){S.sd=S.sd||TODAY();const D=S.D,gs=D.goals.map(g=>({g,s:gstat(g)})),mx=Math.max(1,...gs.map(x=>Math.max(x.s.plan,x.s.act)/60)),sel=D.goals.find(g=>g.id===S.sg);
+ return `<div class="cd"><h2>Planned vs actual hours · tap a goal</h2>${gs.length?gs.map(({g,s})=>`<button data-sg="${g.id}" style="display:block;width:100%;text-align:left;padding:10px 0;border-top:1px solid var(--ln)"><div class="row"><b style="${g.id===S.sg?'color:var(--cy)':''}">${esc(g.t)}</b><span class="mu">${s.dn}/${s.n} tasks done</span></div><div class="bar" style="margin-top:6px"><i style="width:${s.plan/60/mx*100}%;background:var(--pu)"></i></div><div class="bar" style="margin-top:4px"><i style="width:${s.act/60/mx*100}%;background:var(--cy)"></i></div><div class="mu" style="margin-top:4px"><span style="color:var(--pu)">${(s.plan/60).toFixed(1)}h planned</span> · <span style="color:var(--cy)">${(s.act/60).toFixed(1)}h actual</span></div></button>`).join(''):'<p class="mu">Create a goal to see its analytics.</p>'}</div>`+(sel?drill(sel,S.sd):'')+curveV()}
+function fview(){const T={goals:'Goals',plan:'Tasks',stats:'Analytics',badges:'Achievements'};
+ return `<div class="row" style="margin:4px 0 6px"><button class="gh" data-fv="${S.fv==='plan'?(S.fb||''):''}" style="padding:10px 16px">Back</button><b class="d">${T[S.fv]}</b><span style="width:70px"></span></div>`+(S.fv==='goals'?goalsV():S.fv==='plan'?planV():S.fv==='stats'?statsV():badgesV())}
 function flow(){
  if(S.fv)return fview();
- const c=S.brk?'var(--pu)':'var(--cy)',t=cur(),sc=score(),dg=S.D.dgoal||120,td=Math.round(S.D.sessions.filter(s=>day(s.t)===day(Date.now())).reduce((a,s)=>a+s.min,0)),dst=S.D.sessions.slice(-5).reduce((a,s)=>a+s.dist,0);
- return `<div class="stage"><div class="mu">${S.brk?'Break':'Focusing on'}</div><h1 class="d" style="font-size:20px;margin-top:2px">${S.brk?'Rest your eyes':esc(t?t.t:'Open focus')}</h1>
- <div class="clock ${S.run?'glow':''}" style="--k:${c}"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="var(--card)" stroke-width="4"/><circle id="arc" cx="125" cy="125" r="110" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="691" stroke-dashoffset="691"/></svg><div class="t"><b id="tt">${S.mode==='pomo'?fmt((S.brk?5:S.len)*60):'00:00'}</b></div></div>
+ const D=S.D;if(S.mode==='pomo'&&!S.q&&cur()&&!S.run){S.q=buildQ(cur().id);S.qi=0}
+ const c=S.brk?'var(--pu)':'var(--cy)',t=cur(),sc=score(),dg=D.dgoal||120,cd=coachDay(TODAY()),td=cd.m.tot,ag=D.goals.find(g=>g.id===D.agoal&&!g.done),rem=t?Math.max(0,t.est*60-spent(t.id)):0,q=S.q,works=q?q.filter(x=>x.type==='work').length:0,wi=q?q.slice(0,S.qi+1).filter(x=>x.type==='work').length:0,today=TODAY();
+ const tl=[...tasksOn(null,today,'daily'),...tasksOn(null,today,'weekly'),...tasksOn(null,today,'monthly')].filter(x=>!x.done).slice(0,6),rv=D.reviews[today],rvy=D.reviews[ymd(Date.now()-DAY)],hasData=cd.m.n>0||cd.err.length>0;
+ return `<div class="stage"><div class="mu">${S.brk?'Break':'Focusing on'}</div><h1 class="d" style="font-size:20px;margin-top:2px">${S.brk?'Rest your eyes':esc(t?t.t:'Open focus')}</h1>${t&&!S.brk?`<div class="mu">${(rem/60).toFixed(1)}h left of ${t.est}h</div>`:''}
+ <div class="clock ${S.run?'glow':''}" style="--k:${c}"><svg viewBox="0 0 250 250"><circle cx="125" cy="125" r="110" fill="none" stroke="var(--card)" stroke-width="4"/><circle id="arc" cx="125" cy="125" r="110" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round" stroke-dasharray="691" stroke-dashoffset="691"/></svg><div class="t"><b id="tt">${S.mode==='pomo'?fmt(segMin()*60):'00:00'}</b></div></div>
+ ${q&&S.mode==='pomo'?`<div class="mu" style="margin:-4px 0 10px">${S.brk?'Break':'Focus'} · block ${Math.min(wi,works)} of ${works}</div><div style="display:flex;gap:4px;justify-content:center;margin-bottom:16px;flex-wrap:wrap">${q.slice(0,24).map((x,i)=>`<i style="height:6px;width:${x.type==='work'?22:10}px;border-radius:4px;background:${x.type==='work'?'var(--cy)':'var(--pu)'};opacity:${i<S.qi?.25:1};${i===S.qi?'outline:2px solid var(--tx);outline-offset:2px':''}"></i>`).join('')}</div>`:''}
  ${S.run?'':`<div class="seg" style="margin-bottom:16px"><button data-m="pomo" data-l="25" class="${S.mode==='pomo'&&S.len===25?'on':''}">25</button><button data-m="pomo" data-l="50" class="${S.mode==='pomo'&&S.len===50?'on':''}">50</button><button data-m="sw" class="${S.mode==='sw'?'on':''}">Stopwatch</button></div><br>`}
  <div style="display:flex;gap:10px;justify-content:center">${S.run?`<button class="gh" id="stop">${S.mode==='sw'||S.brk?'Finish':'End early'}</button>`:`<button class="cta" id="go">${S.brk?'Start break':'Start focus'}</button>`}</div>
  ${S.run&&S.lockOn?`<p class="mu" style="margin-top:14px;color:var(--rd)">Strict Mode: locked in until the timer ends</p>`:''}</div>
  <div class="hide">
- <div class="pills"><button data-fv="plan">${ic('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>')}Goals</button><button data-fv="stats">${ic('<path d="M3 20l5-7 4 3 8-11"/>')}Analytics</button><button data-fv="badges">${ic('<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 21l5-3 5 3-1.5-7"/>')}Badges</button></div>
- <div class="cd"><div class="row"><h2 style="margin:0">Goals</h2><button class="mu" data-fv="plan">See all</button></div><div style="margin-top:6px">${S.D.goals.filter(g=>!g.done).slice(0,3).map(g=>goalRow(g)).join('')||'<p class="mu" style="padding:10px 0">Set a goal and your focus minutes fill it automatically.</p>'}</div>${gform}</div>
- <div class="cd"><h2>Tasks</h2><div style="display:flex;gap:8px"><input id="ti" placeholder="Add a task" aria-label="New task" style="margin:0"><button class="gh" id="ta">Add</button></div><div style="margin-top:6px">${S.D.tasks.length?S.D.tasks.map(x=>`<div class="tk ${x.id===S.D.cur&&!x.done?'cur':''}"><button class="ck ${x.done?'d':''}" data-done="${x.id}" aria-label="Complete">${x.done?'✓':''}</button><button class="nm" data-cur="${x.id}" style="${x.done?'text-decoration:line-through;color:var(--mu)':''}">${esc(x.t)}</button><button class="mu" data-del="${x.id}" aria-label="Delete">✕</button></div>`).join(''):'<p class="mu" style="padding:10px 0">No tasks yet. Tap one to make it your focus.</p>'}</div></div>
+ <div class="pills"><button data-fv="goals">${ic('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>')}Goals</button><button data-fv="stats">${ic('<path d="M3 20l5-7 4 3 8-11"/>')}Analytics</button><button data-fv="badges">${ic('<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 21l5-3 5 3-1.5-7"/>')}Badges</button></div>
+ ${ag?`<button class="cd" data-fv="plan" data-pl="${esc(ag.pid)}" style="display:flex;justify-content:space-between;align-items:center;text-align:left"><span><span class="mu" style="display:block;font-size:12px">Active goal</span><b class="d">${esc(ag.t)}</b></span><span class="mu">›</span></button>`:`<button class="cd" data-fv="goals" style="display:flex;justify-content:space-between;text-align:left"><b class="d">Set an active goal</b><span class="mu">›</span></button>`}
+ <div class="cd"><div class="row"><h2 style="margin:0">Today</h2><button class="mu" data-fv="plan" data-pl="${esc(ag?ag.pid:'inbox')}">Manage</button></div>${tl.length?tl.map(x=>`<button class="tk ${x.id===D.cur?'cur':''}" data-cur="${x.id}"><span class="nm"><b>${esc(x.t)}</b><div class="mu">${x.scope} · ${Math.round(spent(x.id))}m / ${x.est}h</div></span><span class="mu">Load ›</span></button>`).join(''):'<p class="mu" style="padding:10px 0">No tasks today. Tap Manage to plan some.</p>'}</div>
  <div class="cd"><div class="row"><div><b>Strict Mode</b><div class="mu">Full-screen lock during Pomodoro sessions</div></div><button class="tog ${S.strict?'on':''}" id="strict" aria-label="Strict Mode"></button></div></div>
- <div class="cd"><h2>AI coach</h2><div class="mg"><div><span class="mu">Deep Work Score</span><b style="color:var(--cy)">${sc==null?'—':sc}</b></div><div><span class="mu">Today vs goal</span><b>${td}<span class="mu" style="font-size:14px"> / ${dg}m</span></b></div><div><span class="mu">Streak</span><b style="color:var(--gr)">${streak()}d</b></div><div><span class="mu">Distractions</span><b style="color:${dst?'var(--rd)':'var(--gr)'}">${dst}</b></div></div>
- <div class="bar" style="margin-top:14px"><i style="width:${Math.min(100,td/dg*100)}%"></i></div><p class="ins">${esc(S.ai||tip())}</p>${S.sample?`<button class="gh" id="ask" style="margin-top:14px;width:100%" ${S.aiBusy?'disabled':''}>${S.aiBusy?'Thinking…':'Get personal feedback'}</button>`:''}</div>
+ <div class="cd"><h2>AI coach</h2><div class="mg"><div><span class="mu">Deep Work Score</span><b style="color:var(--cy)">${sc==null?'—':sc}</b></div><div><span class="mu">Today vs goal</span><b>${td}<span class="mu" style="font-size:14px"> / ${dg}m</span></b></div><div><span class="mu">Streak</span><b style="color:var(--gr)">${streak()}d</b></div><div><span class="mu">Distractions</span><b style="color:${cd.m.dist?'var(--rd)':'var(--gr)'}">${cd.m.dist}</b></div></div>
+ <div class="bar" style="margin-top:14px"><i style="width:${Math.min(100,td/dg*100)}%"></i></div>
+ ${hasData?coachBlock('Errors','var(--rd)',cd.err)+coachBlock('Focus and energy leaks','var(--pu)',cd.leak)+coachBlock('Tips','var(--cy)',cd.tip):'<p class="ins">No data yet. Finish a session and the coach will diagnose it.</p>'}
+ ${rv?`<div style="margin-top:14px;padding:12px;border-radius:14px;background:var(--c2);white-space:pre-wrap;font-size:14px"><b>End-of-day review</b>\n${esc(rv)}</div>`:''}
+ ${rvy?`<div style="margin-top:10px;padding:12px;border-radius:14px;background:var(--c2);white-space:pre-wrap;font-size:14px"><b>Yesterday’s review</b>\n${esc(rvy)}</div>`:''}
+ ${S.ai?`<p style="margin-top:14px;white-space:pre-wrap;font-size:14px">${esc(S.ai)}</p>`:''}
+ <button class="gh" id="eod" style="margin-top:14px;width:100%">End-of-day review</button>${S.sample?`<button class="gh" id="ask" style="margin-top:8px;width:100%" ${S.aiBusy?'disabled':''}>${S.aiBusy?'Analyzing…':'Deep analysis'}</button>`:''}</div>
  <div class="cd"><h2>Soundscapes</h2><div class="sc">${[['White noise','Steady and neutral'],['Rain','Soft and warm'],['Alpha','10 Hz · calm focus'],['Beta','20 Hz · alert']].map(([n,d])=>`<button class="${S.snd===n?'on':''}" data-s="${n}" aria-pressed="${S.snd===n}"><div class="eq"><i></i><i></i><i></i><i></i></div><b>${n}</b><span>${d}</span></button>`).join('')}</div></div></div>`}
-function fview(){return `<div class="row" style="margin:4px 0 6px"><button class="gh" data-fv="" style="padding:10px 16px">Back</button><b class="d">${{plan:'Plan and goals',stats:'Analytics',badges:'Achievements'}[S.fv]}</b><span style="width:70px"></span></div>`+(S.fv==='plan'?planV():S.fv==='stats'?statsV():badgesV())}
-function planV(){const dg=S.D.dgoal||120,d=S.D.goals.filter(g=>g.done).length;return `<div class="cd"><h2>Daily focus goal</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${[60,120,180,240].map(m=>`<button class="chip ${dg===m?'on':''}" data-dg="${m}">${m/60}h</button>`).join('')}</div></div><div class="cd"><div class="row"><h2 style="margin:0">Your goals</h2><span class="mu">${d} completed</span></div><div style="margin-top:6px">${S.D.goals.map(g=>goalRow(g,1)).join('')||'<p class="mu" style="padding:10px 0">No goals yet.</p>'}</div>${gform}<p class="mu" style="margin-top:10px">Tap a goal to make it active. Focus minutes fill the active goal.</p></div>`}
-function statsV(){const days=[...Array(7)].map((_,i)=>{const d=Date.now()-(6-i)*864e5;return{l:new Date(d).toLocaleDateString([],{weekday:'short'}).slice(0,3),m:S.D.sessions.filter(s=>day(s.t)===day(d)).reduce((a,s)=>a+s.min,0)}});
+
+function newH2(b,id,q){
+ if(q.fv!==undefined){const prev=S.fv||'';if(q.fv==='plan'){S.fb=prev;S.pl=q.pl||S.pl||'inbox'}S.fv=q.fv||null;if(!q.fv)S.sg=null;try{history.replaceState(null,'',S.fv==='stats'?'#analytic':location.pathname+location.search)}catch(e){}render();return 1}
+ if(q.sd){S.sd=q.sd;render(true);return 1}
+ if(q.sg){S.sg=S.sg===+q.sg?null:+q.sg;render(true);return 1}
+ if(q.ts){S.ts=q.ts;render(true);return 1}
+ if(q.cur){if(S.run){say('Finish the running session first',1);return 1}loadTask(+q.cur);S.fv=null;S.tab='flow';render();return 1}
+ if(id==='ta'){const t=($('#tt2').value||'').trim(),e=+$('#te').value;if(!t||!(e>0)){say('Add a title and estimated hours',1);return 1}
+  S.D.tasks.push({id:Date.now(),pid:S.pl||'inbox',t:t.slice(0,80),scope:S.ts||'daily',date:S.sd||TODAY(),est:Math.min(200,e),done:false});S.tt='';S.te='';save();render(true);return 1}
+ if(id==='ga'){const t=($('#gi').value||'').trim();if(!t){say('Give the goal a title',1);return 1}
+  const due=$('#gd').value||ymd(Date.now()+30*DAY);let pid=$('#gp').value;if(pid==='new'){pid='p'+Date.now();S.D.plans.push({id:pid,name:t.slice(0,60)})}
+  const g={id:Date.now(),t:t.slice(0,80),pid,start:TODAY(),due,done:false};S.D.goals.push(g);if(!S.D.agoal)S.D.agoal=g.id;save();say('Goal created');render(true);return 1}
+ if(q.gact){S.D.agoal=+q.gact;save();render(true);return 1}
+ if(q.gfin){const g=S.D.goals.find(x=>x.id===+q.gfin);if(!g)return 1;g.review=reviewGoal(g);g.done=true;if(S.D.agoal===g.id)S.D.agoal=(S.D.goals.find(x=>!x.done)||{}).id||null;save();say('Goal complete. Debrief ready.');buzz([20,40,20]);render(true);return 1}
+ if(q.gdel){S.D.goals=S.D.goals.filter(x=>x.id!==+q.gdel);if(S.D.agoal===+q.gdel)S.D.agoal=(S.D.goals.find(x=>!x.done)||{}).id||null;save();render(true);return 1}
+ if(id==='eod'){S.D.reviews[TODAY()]=reviewDay(TODAY());save();say('Day reviewed');render(true);return 1}
+ return 0}
+document.addEventListener('input',e=>{if(e.target.id==='tt2')S.tt=e.target.value;if(e.target.id==='te')S.te=e.target.value});
+addEventListener('hashchange',()=>{if(S.email){if(location.hash==='#analytic')S.fv='stats';else if(S.fv==='stats')S.fv=null;render()}});
+
+function curveV(){const days=[...Array(7)].map((_,i)=>{const d=Date.now()-(6-i)*864e5;return{l:new Date(d).toLocaleDateString([],{weekday:'short'}).slice(0,3),m:S.D.sessions.filter(s=>day(s.t)===day(d)).reduce((a,s)=>a+s.min,0)}});
  const mx=Math.max(60,...days.map(d=>d.m)),pts=days.map((d,i)=>[25+i*48,115-d.m/mx*95]),line=pts.map(q=>q.join(',')).join(' '),area='25,115 '+line+' 313,115';
  const hr=[...Array(24)].map((_,h)=>S.D.sessions.filter(s=>new Date(s.t).getHours()===h).reduce((a,s)=>a+s.min,0)),hm=Math.max(1,...hr),wk=days.reduce((a,d)=>a+d.m,0),p=peak();
  return `<div class="cd"><h2>Productivity curve · 7 days</h2><svg viewBox="0 0 338 140" style="width:100%"><polygon points="${area}" fill="var(--cy)" opacity=".12"/><polyline points="${line}" fill="none" stroke="var(--cy)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="4" fill="var(--cy)"/><text x="${q[0]}" y="135" text-anchor="middle" font-size="10" fill="var(--mu)">${days[i].l}</text>`).join('')}</svg>
@@ -355,7 +458,7 @@ function render(keep){
   $('#view').innerHTML=`<div class="top"><button class="ib" id="menu" aria-label="Menu"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h16M3 11h16M3 16h10"/></svg></button><div class="brand">${MARK}apexfy</div><div style="display:flex"><button class="ib" id="dmb" aria-label="Messages" style="position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6h18v12H3z"/><path d="M3 7l9 7 9-7"/></svg>${dmUnread()?'<span style="position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:var(--pu)"></span>':''}</button><button class="ib" id="srch" aria-label="Search"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l4 4"/></svg></button><button class="ib" id="prof" aria-label="Profile"><span class="av" style="width:30px;height:30px">${esc(ini(S.D.name))}</span></button></div></div>
   <main id="main">${S.tab==='flow'?flow():S.tab==='comm'?comm():S.tab==='dm'?dmView():you()}</main>
   <nav class="pill">${[['flow','FlowSpace','<path d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/>'],['comm','Community','<path d="M4 5h16v11H9l-5 4z"/>'],['you','You','<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/>']].map(([k,n,p])=>`<button data-t="${k}" class="${S.tab===k?'on':''}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">${p}</svg>${n}</button>`).join('')}</nav>${overlay()}`;
-  if(keep&&keepS!=null)$('#main').scrollTop=keepS;paint();pres()}
+  if(keep&&keepS!=null)$('#main').scrollTop=keepS;paint();pres();try{const e=$('#dsc .on');e&&e.scrollIntoView({inline:'center',block:'nearest'})}catch(x){}}
 setInterval(()=>{const e=$('#rt');if(e&&S.room?.silent)e.textContent=fmt(BLOCK-(Date.now()/1000%BLOCK))},1000);
 
 function dr(o){const d=$('#dr');if(o)d.innerHTML=`<div class="brand" style="margin-bottom:18px">${MARK}apexfy</div>
@@ -374,21 +477,22 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
     if(!/^\S+@\S+\.\S+$/.test(em))return er.textContent='Enter a valid email address.';if(pw.length<8)return er.textContent='Password needs at least 8 characters.';
     try{if(q.m==='up'){const n=($('#an').value||'').trim();if(!n)return er.textContent='Enter your name.';await signUp(n,em,pw)}else await signIn(em,pw)}catch(x){er.textContent=typeof x==='string'?x:'Something went wrong. Try again.'}return}
   if(id==='sw'){S.am=q.m;render();return}
+  if(newH2(b,id,q))return;
   if(newH(b,id,q))return;
   if(q.t){S.tab=q.t;S.room=null;buzz(8);render()}
   else if(id==='go')start();
   else if(id==='stop')done(false);
-  else if(q.m){S.mode=q.m;if(q.l)S.len=+q.l;S.brk=false;render()}
+  else if(q.m){S.mode=q.m;if(q.l)S.len=+q.l;S.brk=false;S.qi=0;S.q=S.mode==='pomo'&&cur()?buildQ(cur().id):null;render()}
   else if(id==='strict'||id==='st2'){S.strict=!S.strict;ls.set('apx_strict',S.strict);buzz();if(id==='st2')dr(true);else render(true)}
   else if(id==='ta'){const i=$('#ti'),v=i.value.trim();if(v){const t={id:Date.now(),t:v,done:false};S.D.tasks.push(t);if(!S.D.cur)S.D.cur=t.id;save();render(true)}}
   else if(q.cur){S.D.cur=+q.cur;save();buzz(8);render(true)}
-  else if(q.done){const t=S.D.tasks.find(x=>x.id===+q.done);t.done=!t.done;if(t.done){say('Task complete');buzz([20,40,20]);if(S.D.cur===t.id)S.D.cur=(S.D.tasks.find(x=>!x.done)||{}).id||null}save();render(true)}
+  else if(q.done){const t=S.D.tasks.find(x=>x.id===+q.done);t.done=!t.done;t.doneAt=t.done?Date.now():null;if(t.done){say('Task complete');buzz([20,40,20]);if(S.D.cur===t.id)S.D.cur=(S.D.tasks.find(x=>!x.done)||{}).id||null}save();render(true)}
   else if(q.del){S.D.tasks=S.D.tasks.filter(x=>x.id!==+q.del);if(S.D.cur===+q.del)S.D.cur=null;save();render(true)}
   else if(q.s){S.snd===q.s?stopSound():playSound(q.s);buzz(8);render(true)}
   else if(q.r){S.room={n:q.r,silent:q.r==='Silent focus'};buzz(8);render()}
   else if(id==='back'){S.room=null;render()}
   else if(id==='snd')sendMsg();
-  else if(id==='ask'){S.aiBusy=true;render(true);try{const sm=S.D.sessions.slice(-20).map(s=>({h:new Date(s.t).getHours(),min:s.min,dist:s.dist,task:s.task}));const r=await S.sample(`You are a concise productivity coach. Given these focus sessions as JSON, give 3 short, specific tips (peak hours, distractions, next step). Under 70 words, plain text, no markdown.\n${JSON.stringify(sm)}`,{modelTier:'quick'});S.ai=r.text}catch(x){say('Coach is unavailable right now.',1)}S.aiBusy=false;render(true)}
+  else if(id==='ask'){S.aiBusy=true;render(true);try{const sm=S.D.sessions.slice(-20).map(s=>({h:new Date(s.t).getHours(),min:s.min,dist:s.dist,task:s.task}));const r=await S.sample(`You are a strict diagnostic productivity analyst. No motivation, no praise. From this JSON of focus sessions (h=hour, min, dist=distractions, task) output exactly three labeled parts: ERRORS (exact behavioral mistakes), LEAKS (where focus time or energy was wasted), TIPS (targeted fixes). Max 90 words, plain text.\n${JSON.stringify(sm)}`,{modelTier:'quick'});S.ai=r.text}catch(x){say('Coach is unavailable right now.',1)}S.aiBusy=false;render(true)}
   else if(id==='menu')dr(true);
   else if(id==='dm'){S.theme=S.theme==='dark'?'light':'dark';ls.set('apx_theme',S.theme);document.documentElement.dataset.theme=S.theme;dr(true)}
   else if(id==='hp'){S.haptic=!S.haptic;dr(true)}
@@ -413,7 +517,7 @@ let DP=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();DP=e})
 const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
 const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
 function instRow(){if(standalone)return'';return `<div class="row"><div>Install as an app<div class="mu">${DP?'Add Apexfy to your home screen.':ios?'In Safari tap Share, then Add to Home Screen.':'In Chrome open the menu, then Install app or Add to Home screen.'}</div></div>${DP?'<button class="gh" id="inst">Install</button>':''}</div>`}
-const ss=ls.get('apx_session',null);if(ss&&ls.get('apx_d_'+ss,null)){login(ss)}else render();
+const ss=ls.get('apx_session',null);if(ss&&ls.get('apx_d_'+ss,null)){login(ss);if(location.hash==='#analytic'){S.fv='stats';render()}}else render();
 </script>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </body>
